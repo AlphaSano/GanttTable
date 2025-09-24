@@ -73,27 +73,110 @@
   }
 
   function injectDefaultStyles() {
-    if (document.getElementById("gantt-table-styles")) return; // une seule fois
+    if (
+      document.getElementById("gantt-table-styles") ||
+      document.querySelector('link[rel="stylesheet"][href*="ganttTable.css"]')
+    ) return;
     const style = document.createElement("style");
     style.id = "gantt-table-styles";
     style.textContent = `
-@page { size: A4 portrait; margin: 10mm; }
-@media print { .gt-month { page-break-after: always; } .gt-month:last-child { page-break-after: auto; } }
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
 
-.gt-wrap { font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif; padding: 16px; }
-.gt-month { margin-bottom: 18px; }
-.gt-month h2 { margin: 8px 0 6px; font-size: 16px; text-transform: capitalize; }
+@media print {
+  .gt-month {
+    page-break-after: none;
+  }
+  .gt-month:last-child {
+    page-break-after: auto;
+  }
+  .gt-task,
+  .gt-task-cell {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-word;
+  }
+}
 
-.gt-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.gt-table thead th { position: sticky; top: 0; background: #f2f2f2; }
-.gt-table th, .gt-table td { border: 1px solid #d0d0d0; padding: 2px 4px; font-size: 11px; text-align: center; }
-.gt-task, .gt-task-cell { text-align: left; width: 22ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gt-days th, .gt-days td { width: calc((100% - 22ch) / var(--days)); }
-.gt-we { background: #fafafa; }
+.gt-wrap {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 16px;
+}
 
-.gt-bar { display: block; height: 10px; border-radius: 3px; background: #7aa7ff; }
+.gt-month {
+  margin-bottom: 18px;
+}
+
+.gt-month h2 {
+  margin: 8px 0 6px;
+  font-size: 16px;
+  text-transform: capitalize;
+}
+
+.gt-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.gt-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f2f2f2;
+}
+
+.gt-table th,
+.gt-table td {
+  border: 1px solid #d0d0d0;
+  padding: 2px 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.gt-table th:first-child,
+.gt-table td:first-child {
+  text-align: left;
+}
+
+.gt-task,
+.gt-task-cell {
+  text-align: left;
+  width: 22ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gt-days th,
+.gt-days td {
+  width: calc((100% - 22ch) / var(--days));
+}
+
+.gt-we {
+  background: #fafafa;
+}
+
+.gt-table td {
+  position: relative;
+  height: 24px;
+  padding: 0;
+}
+
+/* Centrage horizontal et vertical uniquement pour les cellules contenant .gt-bar */
+.gt-table td > .gt-bar {
+  display: block;
+  margin: auto;
+  width: 75%;
+  height: 75%;
+  min-height: 10px;
+  border-radius: 3px;
+  background: #7aa7ff;
+}
 `;
-    document.head.appendChild(style);
+  document.head.appendChild(style);
   }
 
   /**
@@ -176,7 +259,7 @@
       // THEAD ligne 1 : "Tâche" + 1..dim
       const thead = el("thead");
       const tr1 = el("tr");
-      tr1.appendChild(el("th", { class: "gt-task" }, "Tâche"));
+      tr1.appendChild(el("th", { class: "gt-task" }, "Période"));
       for (let d = 1; d <= dim; d++) {
         const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
         tr1.appendChild(
@@ -187,7 +270,7 @@
 
       // THEAD ligne 2 : "Période" + Di..Sa
       const tr2 = el("tr", { class: "gt-days" });
-      tr2.appendChild(el("th", { class: "gt-task-cell" }, "Période"));
+      tr2.appendChild(el("th", { class: "gt-task-cell" }, "Tâche"));
       const dow = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
       for (let d = 1; d <= dim; d++) {
         const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
@@ -209,7 +292,10 @@
         tr.appendChild(
           el(
             "td",
-            { class: "gt-task" },
+            {
+              class: "gt-task",
+              title: `${t.label}  (${formatDDMM(t.start)}→${formatDDMM(t.end)})`
+            },
             `${t.label}  (${formatDDMM(t.start)}→${formatDDMM(t.end)})`
           )
         );
