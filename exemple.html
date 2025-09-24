@@ -7,15 +7,16 @@
 </head>
 <body>
   <div id="app"></div>
-  <script src="ganttTable.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AlphaSanoDJ/ganttTable@main/ganttTable.js"></script>
   <script>
     const tasks = [
       { "label": "Étude", "start": "2025-09-03", "end": "2025-09-10", "color": "#7aa7ff" },
       { "label": "Achat", "start": "2025-09-08", "end": "2025-09-18" },
       { "label": "Fabrication", "start": "2025-09-15", "end": "2025-10-07", "color": "#4caf50" },
-      { "label": "Tests", "start": "2025-10-05", "end": "2025-10-12", "color": "#ff9800" },
-      { "label": "Dossier", "start": "2025-10-05", "end": "2025-10-12" },
-      { "label": "texte plus long pour voir comment c'est géré", "start": "2025-10-05", "end": "2025-10-12" }
+      { "label": "Contrôles", "start": "2025-10-05", "end": "2025-10-12", "color": "#ff9800" },
+      { "label": "Finition", "start": "2025-10-13", "end": "2025-10-13" },
+      { "label": "Livraison", "start": "2025-10-15", "end": "2025-10-15" },
+      { "label": "Mise en route", "start": "2025-11-03", "end": "2025-11-05" },
     ];
     renderGanttAsTables(tasks, { container: "#app" });
   </script>
