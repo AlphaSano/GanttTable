@@ -111,8 +111,9 @@
 }
 
 .gt-month h2 {
-  margin: 8px 0 6px;
-  font-size: 16px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  /*font-size: 16px;*/
   text-transform: capitalize;
 }
 
