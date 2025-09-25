@@ -80,10 +80,10 @@
     const style = document.createElement("style");
     style.id = "gantt-table-styles";
     style.textContent = `
-@page {
+/*@page {
   size: A4 portrait;
   margin: 10mm;
-}
+}*/
 
 @media print {
   .gt-month {
