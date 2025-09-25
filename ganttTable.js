@@ -196,6 +196,7 @@
       injectStyles: doInjectStyles = true,
       shadeWeekends = true,
       defaultColor = "#7aa7ff",
+      monthTitleLevel = 2, // Nouveau paramètre : niveau du titre de mois (1 à 4)
     } = options;
 
     const mount =
@@ -251,8 +252,13 @@
       const monthEnd = endOfMonth(m);
       const dim = daysInMonth(monthStart.getFullYear(), monthStart.getMonth());
 
+      // Calcul du tag de titre selon monthTitleLevel
+      let titleTag = "h" + Math.min(4, Math.max(1, parseInt(monthTitleLevel)));
+      let monthLabel = formatMonthFR(monthStart);
+      // Forcer la majuscule sur le premier caractère
+      monthLabel = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
       const section = el("section", { class: "gt-month" },
-        el("h2", {}, formatMonthFR(monthStart))
+        el(titleTag, {}, monthLabel)
       );
 
       const table = el("table", { class: "gt-table", style: { ["--days"]: String(dim) } });
