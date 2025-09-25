@@ -103,7 +103,7 @@
 
 .gt-wrap {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-  padding: 16px;
+  /*padding: 16px;*/
 }
 
 .gt-month {
