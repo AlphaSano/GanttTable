@@ -14,7 +14,15 @@
     return new Date(dateStr + "T00:00:00");
   }
 
-  function startOfMonth(d) {
+   function sanitizeLabel(label) {
+    if (label == null) return "";
+    return String(label)
+      .replace(/[\u0000-\u001F\u007F\u2028\u2029]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+   function startOfMonth(d) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
   }
 
@@ -219,8 +227,13 @@
           `Dates invalides pour "${t.label}". Format attendu YYYY-MM-DD et start <= end.`
         );
       }
+
+      const cleanedLabel = sanitizeLabel(t.label);
+      const safeLabel = cleanedLabel || "(Libellé indisponible)";
+
       return {
         label: String(t.label),
+        label: safeLabel,
         start: s,
         end: e,
         color: t.color || defaultColor,
