@@ -19,7 +19,12 @@
       { "label": "Livraison", "start": "2025-10-15", "end": "2025-10-15" },
       { "label": "Mise en route", "start": "2025-11-03", "end": "2025-11-05" },
     ];
-    renderGanttAsTables(tasks, { container: "#app", monthTitleLevel: 3 });
+    tasks.forEach(t => console.log(t.label, new Date(t.start), new Date(t.end)));
+    try {
+      renderGanttAsTables(tasks, { container: "#app", monthTitleLevel: 3 });
+    } catch (e) {
+      console.error("Erreur lors du rendu :", e);
+    }
   </script>
 </body>
 </html>
