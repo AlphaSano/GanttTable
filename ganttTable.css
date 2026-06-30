@@ -1,18 +1,44 @@
-/*@page {
+@page {
     size: A4 portrait;
     margin: 10mm;
-}*/
+}
 
 @media print {
-    .gt-month {
-        page-break-after: none;
-    }
-    .gt-month:last-child {
-        page-break-after: auto;
+    .gt-table thead th {
+        position: static;
     }
 
-    .gt-task,
-    .gt-task-cell {
+    .gt-table thead {
+        display: table-header-group;
+    }
+
+    .gt-table tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .gt-month > h1,
+    .gt-month > h2,
+    .gt-month > h3,
+    .gt-month > h4 {
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+
+    .gt-month {
+        break-inside: auto;
+        page-break-inside: auto;
+    }
+
+    .gt-bar,
+    .gt-we,
+    .gt-table thead th {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .gt-task-label,
+    .gt-task-dates {
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
@@ -20,21 +46,37 @@
     }
 }
 
+/* ── Conteneur ────────────────────────────────────────────── */
+
 .gt-wrap {
     font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-    /*padding: 16px;*/
 }
+
+/* ── Section mensuelle ────────────────────────────────────── */
 
 .gt-month {
-    margin-bottom: 18px;
+    margin-bottom: 28px;
 }
 
-.gt-month h2 {
-    margin-top: 3px;
-    margin-bottom: 3px;
-    /*font-size: 16px;*/
+.gt-month + .gt-month {
+    border-top: 1px solid #e4e4e4;
+    padding-top: 8px;
+    margin-top: -4px;
+}
+
+.gt-month h1,
+.gt-month h2,
+.gt-month h3,
+.gt-month h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #3a3a3a;
+    letter-spacing: 0.03em;
     text-transform: capitalize;
 }
+
+/* ── Table ────────────────────────────────────────────────── */
 
 .gt-table {
     width: 100%;
@@ -45,62 +87,113 @@
 .gt-table thead th {
     position: sticky;
     top: 0;
-    background: #f2f2f2;
+    z-index: 1;
 }
 
 .gt-table th,
 .gt-table td {
-    border: 1px solid #d0d0d0;
-    padding: 2px 4px;
-    font-size: 11px;
+    border: 1px solid #e0e0e0;
+    padding: 2px 3px;
+    font-size: 10px;
     text-align: center;
 }
 
 .gt-table th:first-child,
 .gt-table td:first-child {
     text-align: left;
+    font-size: 11px;
 }
+
+/* ── En-têtes ─────────────────────────────────────────────── */
+
+/* Ligne 1 : abréviations des jours (Lu, Ma…) */
+.gt-table thead tr:first-child th {
+    background: #e6e6e6;
+    color: #555;
+    font-weight: 600;
+    font-size: 9px;
+}
+
+.gt-table thead tr:first-child th.gt-we {
+    background: #d8d8d8;
+}
+
+/* Ligne 2 : numéros de jours */
+.gt-table thead tr:last-child th {
+    background: #f2f2f2;
+    color: #555;
+    font-weight: 400;
+}
+
+.gt-table thead tr:last-child th.gt-we {
+    background: #e8e8e8;
+}
+
+/* ── Colonne tâche ────────────────────────────────────────── */
 
 .gt-task,
 .gt-task-cell {
-        text-align: left;
-        width: 22ch;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    text-align: left;
 }
 
-.gt-days th,
-.gt-days td {
-    width: calc((100% - 22ch) / var(--days));
+/* Cellules d'en-tête : une seule ligne */
+.gt-task-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+.gt-table th.gt-task,
+.gt-table td.gt-task,
+.gt-table th.gt-task-cell,
+.gt-table td.gt-task-cell {
+    padding: 2px 6px;
+}
+
+/* Contenu des cellules de tâche : deux lignes */
+.gt-task-label,
+.gt-task-dates {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gt-task-dates {
+    font-size: 9px;
+    color: blue;
+}
+
+/* ── Cellules ─────────────────────────────────────────────── */
 
 .gt-we {
-    background: #fafafa;
+    background: #eaeaea;
 }
 
 .gt-table td {
     position: relative;
-    height: 24px;
+    height: auto;
     padding: 0;
 }
 
-/* Centrage horizontal et vertical uniquement pour les cellules contenant .gt-bar */
+/* ── Barres Gantt ─────────────────────────────────────────── */
+
 .gt-table td > .gt-bar {
     display: block;
-    margin: auto;
-    width: 25%;
-    height: 25%;
-    min-height: 10px;
-    border-radius: 3px;
+    margin: 5px auto;
+    width: 80%;
+    height: 14px;
+    min-height: 8px;
+    border-radius: 4px;
     background: #7aa7ff;
 }
 
-.gt-bar {
+.gt-bar-continuous {
     display: block;
-    width: 25%;
-    height: 25%;
-    min-height: 10px; /* pour garder une barre visible si la cellule est petite */
-    border-radius: 3px;
+    margin: 5px 0;
+    width: 100%;
+    height: 14px;
+    min-height: 8px;
+    border-radius: 4px;
     background: #7aa7ff;
 }

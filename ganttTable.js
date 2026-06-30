@@ -68,7 +68,10 @@
       else if (k === "dataset" && v && typeof v === "object") {
         Object.entries(v).forEach(([dk, dv]) => (node.dataset[dk] = dv));
       } else if (k === "style" && v && typeof v === "object") {
-        Object.assign(node.style, v);
+        for (const [prop, val] of Object.entries(v)) {
+          if (prop.startsWith("--")) node.style.setProperty(prop, val);
+          else node.style[prop] = val;
+        }
       } else {
         node.setAttribute(k, v);
       }
@@ -80,6 +83,59 @@
     return node;
   }
 
+  // Normalise une Date à minuit (pour comparaisons jour-à-jour)
+  function dayOf(d) {
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  // Mode "cells" : une barre par cellule active
+  function buildCellsCells(segStart, segEnd, monthStart, dim, shadeWeekends, color) {
+    const rangeStart = dayOf(segStart);
+    const rangeEnd   = dayOf(segEnd);
+    const tds = [];
+    for (let d = 1; d <= dim; d++) {
+      const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
+      const td  = el("td", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" });
+      if (cur >= rangeStart && cur <= rangeEnd)
+        td.appendChild(el("span", { class: "gt-bar", style: { background: color } }));
+      tds.push(td);
+    }
+    return tds;
+  }
+
+  // Mode "continuous" : une seule cellule colspan pour toute la plage
+  function buildCellsContinuous(segStart, segEnd, monthStart, dim, shadeWeekends, color) {
+    const rangeStart = dayOf(segStart);
+    const rangeEnd   = dayOf(segEnd);
+    const tds = [];
+    let d = 1;
+
+    while (d <= dim && new Date(monthStart.getFullYear(), monthStart.getMonth(), d) < rangeStart) {
+      const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
+      tds.push(el("td", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" }));
+      d++;
+    }
+
+    let span = 0;
+    while (d + span <= dim && new Date(monthStart.getFullYear(), monthStart.getMonth(), d + span) <= rangeEnd)
+      span++;
+
+    if (span > 0) {
+      const barTd = el("td", { colspan: String(span) });
+      barTd.appendChild(el("div", { class: "gt-bar-continuous", style: { background: color } }));
+      tds.push(barTd);
+      d += span;
+    }
+
+    while (d <= dim) {
+      const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
+      tds.push(el("td", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" }));
+      d++;
+    }
+
+    return tds;
+  }
+
   function injectDefaultStyles() {
     if (
       document.getElementById("gantt-table-styles") ||
@@ -88,101 +144,99 @@
     const style = document.createElement("style");
     style.id = "gantt-table-styles";
     style.textContent = `
-/*@page {
+@page {
   size: A4 portrait;
   margin: 10mm;
-}*/
+}
 
 @media print {
-  .gt-month {
-    page-break-after: none;
+  .gt-table thead th { position: static; }
+  .gt-table thead { display: table-header-group; }
+  .gt-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .gt-month > h1, .gt-month > h2, .gt-month > h3, .gt-month > h4 {
+    break-after: avoid; page-break-after: avoid;
   }
-  .gt-month:last-child {
-    page-break-after: auto;
+  .gt-month { break-inside: auto; page-break-inside: auto; }
+  .gt-bar, .gt-we, .gt-table thead th {
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
   }
-  .gt-task,
-  .gt-task-cell {
-    white-space: normal !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
-    word-break: break-word;
+  .gt-task-label, .gt-task-dates {
+    white-space: normal !important; overflow: visible !important;
+    text-overflow: clip !important; word-break: break-word;
   }
 }
 
 .gt-wrap {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
-  /*padding: 16px;*/
 }
 
-.gt-month {
-  margin-bottom: 18px;
-}
+.gt-month { margin-bottom: 28px; }
+.gt-month + .gt-month { border-top: 1px solid #e4e4e4; padding-top: 8px; margin-top: -4px; }
 
-.gt-month h2 {
-  margin-top: 3px;
-  margin-bottom: 3px;
-  /*font-size: 16px;*/
+.gt-month h1, .gt-month h2, .gt-month h3, .gt-month h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a3a3a;
+  letter-spacing: 0.03em;
   text-transform: capitalize;
 }
 
-.gt-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-}
+.gt-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
-.gt-table thead th {
-  position: sticky;
-  top: 0;
-  background: #f2f2f2;
-}
+.gt-table thead th { position: sticky; top: 0; z-index: 1; }
 
-.gt-table th,
-.gt-table td {
-  border: 1px solid #d0d0d0;
-  padding: 2px 4px;
-  font-size: 11px;
+.gt-table th, .gt-table td {
+  border: 1px solid #e0e0e0;
+  padding: 2px 3px;
+  font-size: 10px;
   text-align: center;
 }
 
-.gt-table th:first-child,
-.gt-table td:first-child {
-  text-align: left;
+.gt-table th:first-child, .gt-table td:first-child { text-align: left; font-size: 11px; }
+
+.gt-table thead tr:first-child th { background: #e6e6e6; color: #555; font-weight: 600; font-size: 9px; }
+.gt-table thead tr:first-child th.gt-we { background: #d8d8d8; }
+
+.gt-table thead tr:last-child th { background: #f2f2f2; color: #555; font-weight: 400; }
+.gt-table thead tr:last-child th.gt-we { background: #e8e8e8; }
+
+.gt-task, .gt-task-cell { text-align: left; }
+
+.gt-task-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.gt-table th.gt-task, .gt-table td.gt-task,
+.gt-table th.gt-task-cell, .gt-table td.gt-task-cell { padding: 2px 6px; }
+
+.gt-task-label, .gt-task-dates {
+  display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.gt-task,
-.gt-task-cell {
-  text-align: left;
-  width: 22ch;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+.gt-task-dates { font-size: 9px; color: #6a9fd4; }
 
-.gt-days th,
-.gt-days td {
-  width: calc((100% - 22ch) / var(--days));
-}
+.gt-we { background: #eaeaea; }
 
-.gt-we {
-  background: #fafafa;
-}
+.gt-table td { position: relative; height: auto; padding: 0; }
 
-.gt-table td {
-  position: relative;
-  height: 24px;
-  padding: 0;
-}
-
-/* Centrage horizontal et vertical uniquement pour les cellules contenant .gt-bar */
 .gt-table td > .gt-bar {
   display: block;
-  margin: auto;
-  width: 75%;
-  height: 75%;
-  min-height: 10px;
-  border-radius: 3px;
+  margin: 5px auto;
+  width: 80%;
+  height: 14px;
+  min-height: 8px;
+  border-radius: 4px;
   background: #7aa7ff;
+}
+
+.gt-bar-continuous {
+  display: block;
+  margin: 5px 0;
+  width: 100%;
+  height: 14px;
+  min-height: 8px;
+  border-radius: 4px;
+  background: #7aa7ff;
+  opacity: 0.8;
 }
 `;
   document.head.appendChild(style);
@@ -204,8 +258,12 @@
       injectStyles: doInjectStyles = true,
       shadeWeekends = true,
       defaultColor = "#7aa7ff",
-      monthTitleLevel = 2, // Nouveau paramètre : niveau du titre de mois (1 à 4)
+      monthTitleLevel = 2,
+      labelWidth = "15%",
+      barMode = "cells",        // "cells" | "continuous"
     } = options;
+
+    const buildDayCells = barMode === "continuous" ? buildCellsContinuous : buildCellsCells;
 
     const mount =
       typeof container === "string" ? document.querySelector(container) : container;
@@ -232,7 +290,6 @@
       const safeLabel = cleanedLabel || "(Libellé indisponible)";
 
       return {
-        label: String(t.label),
         label: safeLabel,
         start: s,
         end: e,
@@ -274,31 +331,40 @@
         el(titleTag, {}, monthLabel)
       );
 
-      const table = el("table", { class: "gt-table", style: { ["--days"]: String(dim) } });
+      const table = el("table", { class: "gt-table" });
+
+      // Colgroup : fixe la largeur de la colonne tâche, le reste est réparti égalment
+      const colgroup = document.createElement("colgroup");
+      const colLabel = document.createElement("col");
+      colLabel.style.width = labelWidth;
+      colgroup.appendChild(colLabel);
+      for (let d = 0; d < dim; d++) colgroup.appendChild(document.createElement("col"));
+      table.appendChild(colgroup);
 
       // THEAD ligne 1 : "Tâche" + 1..dim
       const thead = el("thead");
       const tr1 = el("tr");
-      tr1.appendChild(el("th", { class: "gt-task" }, "Période"));
+      tr1.appendChild(el("th", { class: "gt-task" }, "Tâche"));
       for (let d = 1; d <= dim; d++) {
         const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
         tr1.appendChild(
           el("th", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" }, String(d))
         );
       }
-      thead.appendChild(tr1);
-
-      // THEAD ligne 2 : "Période" + Di..Sa
+      // THEAD ligne 2 : abréviations des jours
       const tr2 = el("tr", { class: "gt-days" });
-      tr2.appendChild(el("th", { class: "gt-task-cell" }, "Tâche"));
-      const dow = ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"];
+      tr2.appendChild(el("th", { class: "gt-task-cell" }, "Période"));
+      const dow = ["DI", "LU", "MA", "ME", "JE", "VE", "SA"];
       for (let d = 1; d <= dim; d++) {
         const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
         tr2.appendChild(
           el("th", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" }, dow[cur.getDay()])
         );
       }
+
+      // Abréviations en premier, numéros en second
       thead.appendChild(tr2);
+      thead.appendChild(tr1);
 
       const tbody = el("tbody");
 
@@ -308,26 +374,24 @@
         if (!clipped) continue;
 
         const [segStart, segEnd] = clipped;
+        const sameDay =
+          t.start.getFullYear() === t.end.getFullYear() &&
+          t.start.getMonth()    === t.end.getMonth()    &&
+          t.start.getDate()     === t.end.getDate();
+        const dateStr = sameDay
+          ? formatDDMM(t.start)
+          : `${formatDDMM(t.start)} → ${formatDDMM(t.end)}`;
+
         const tr = el("tr");
         tr.appendChild(
-          el(
-            "td",
-            {
-              class: "gt-task",
-              title: `${t.label}  (${formatDDMM(t.start)}→${formatDDMM(t.end)})`
-            },
-            `${t.label}  (${formatDDMM(t.start)}→${formatDDMM(t.end)})`
+          el("td", { class: "gt-task", title: `${t.label} ${dateStr}` },
+            el("span", { class: "gt-task-label" }, t.label),
+            el("span", { class: "gt-task-dates" }, dateStr)
           )
         );
 
-        for (let d = 1; d <= dim; d++) {
-          const cur = new Date(monthStart.getFullYear(), monthStart.getMonth(), d);
-          const inRange = cur >= new Date(segStart.getFullYear(), segStart.getMonth(), segStart.getDate()) &&
-                          cur <= new Date(segEnd.getFullYear(), segEnd.getMonth(), segEnd.getDate());
-          const td = el("td", { class: shadeWeekends && isWeekend(cur) ? "gt-we" : "" });
-          if (inRange) td.appendChild(el("span", { class: "gt-bar", style: { background: t.color } }));
-          tr.appendChild(td);
-        }
+        buildDayCells(segStart, segEnd, monthStart, dim, shadeWeekends, t.color)
+          .forEach(td => tr.appendChild(td));
         tbody.appendChild(tr);
       }
 
